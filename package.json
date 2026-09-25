@@ -1,0 +1,23 @@
+{
+  "name": "checkout-widget-harness",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.2"
+  },
+  "scripts": {
+    "setup": "playwright install chromium",
+    "build": "node scripts/build.ts",
+    "dev": "node scripts/dev.ts",
+    "smoke": "node scripts/smoke.ts",
+    "deploy": "node scripts/deploy.ts",
+    "login-url": "node scripts/login-url.ts",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2"
+  }
+}

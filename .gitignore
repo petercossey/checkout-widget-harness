@@ -1,0 +1,9 @@
+store-credentials.env
+*.env
+.DS_Store
+node_modules/
+dist/
+.playwright-cli/
+.dev-profile/
+reference-code/
+!store-credentials.example.env

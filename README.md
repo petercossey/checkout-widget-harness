@@ -69,6 +69,7 @@ docs/bigcommerce.md          platform crib notes, linking to BigCommerce's publi
 | `?cwh=debug` | verbose logs, including every checkout API call (sticky; `?cwh=on` resets) |
 | `?cwh=off` | disable all widgets in this browser (sticky) |
 | `cwh.status()` | in DevTools: version, each widget's state and mount count, recent events |
+| `cwh.checkout.*` | in DevTools: the widget API (`fillShippingAddress`, `readShippingAddress`, `getCheckout`, …) on any page with the harness loaded (`npm run dev`, `smoke --headed`, or deployed) |
 | `npm run deploy -- --list` | what's deployed |
 | `npm run deploy -- <widget> --disable / --enable / --remove` | store-wide switch |
 | `npm run deploy -- <widget> --hosted` | WebDAV-hosted file with an SRI hash, instead of inline |
@@ -77,7 +78,6 @@ docs/bigcommerce.md          platform crib notes, linking to BigCommerce's publi
 
 - Storefront: https://supply-yard.mybigcommerce.com (stock OPC, AU shipping zone, B2B Edition present)
 - Signed-in shopper: `npm run dev -- --login=1`, or `open "$(npm run -s login-url -- 1)"`
-- No-build console tools: `snippets/net-tap.js`, `snippets/fill-address.js`
 
 ## Reference
 
