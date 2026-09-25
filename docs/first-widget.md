@@ -110,7 +110,7 @@ export default (async ({ page, host }) => {
 }) satisfies WidgetSmoke;
 ```
 
-Use `host` (a Playwright locator) to click your own UI, and `expectSavedAddress({ city: 'Melbourne' })` to check what checkout saved. See `widgets/postcode-lookup/smoke.ts` for a complete one. Still click through by hand once, including as a signed-in shopper.
+Use `host` (a Playwright locator) to click your own UI, and `expectSavedAddress({ city: 'Melbourne' })` to check what checkout saved.
 
 ## 5. Ship it
 
