@@ -22,10 +22,12 @@ export interface Address {
   postalCode?: string;
   /** Store-specific custom fields by id, e.g. { field_25: 'Leave at door' }. */
   customFields?: Record<string, string>;
+  /** "Save this address in my address book". Signed-in shoppers only; ignored when the checkbox isn't shown. */
+  shouldSaveAddress?: boolean;
 }
 
 export interface FillOptions {
-  /** Clear standard text fields the address doesn't include (e.g. a leftover company). Default false: a partial update. */
+  /** Clear standard text fields and the state when the address doesn't include them (e.g. a leftover company). Default false: a partial update. */
   replace?: boolean;
   /**
    * Resolve only after checkout has auto-saved the address (a consignment POST/PUT), about 1.7s after the last change.
@@ -128,7 +130,7 @@ export async function fillShippingAddress(address: Address, options: FillOptions
     return outcome;
   };
 
-  const { countryCode, stateOrProvince, stateOrProvinceCode, phone, customFields, ...text } = address;
+  const { countryCode, stateOrProvince, stateOrProvinceCode, phone, customFields, shouldSaveAddress, ...text } = address;
 
   // 1. Country first. Changing it swaps the state field for a different element,
   //    then clears the state value in an effect (a frame or two later; see
@@ -148,13 +150,23 @@ export async function fillShippingAddress(address: Address, options: FillOptions
   // 3. State: a select or a text input, depending on the country.
   const state = adapter.shippingStateField();
   const stateValue = state?.key === 'stateOrProvinceCode' ? (stateOrProvinceCode ?? stateOrProvince) : (stateOrProvince ?? stateOrProvinceCode);
+  let stateOutcome: ReturnType<typeof set>;
   if (stateValue !== undefined) {
-    if (state) set(state.key, stateValue);
+    if (state) stateOutcome = set(state.key, stateValue);
     else result.missing.push('stateOrProvince');
   }
+  // replace: a state that wasn't given, or isn't an option for this country, mustn't keep the previous address's value.
+  // Caveat: checkout restores an emptied state *select* to the saved address's state while the country is unchanged
+  // (docs/checkout-internals.md §4), so this only sticks for text states or a changed country.
+  if (replace && state && (stateValue === undefined || stateOutcome === 'invalid') && setNativeValue(state.el, '') === 'set') changed = true;
 
   // 4. Phone last, because its input can depend on the selected country.
   set('phone', phone);
+
+  // 5. The save-to-address-book checkbox. Checkout ignores it when comparing addresses (isEqualAddress.ts), so on
+  //    its own it doesn't start a save: it goes with the next address save, or on Continue.
+  const saveBox = shouldSaveAddress === undefined ? null : adapter.shippingField('shouldSaveAddress');
+  if (saveBox instanceof HTMLInputElement && saveBox.checked !== shouldSaveAddress) saveBox.click();
 
   result.ok = result.missing.length === 0;
   if (save) {
@@ -232,7 +244,8 @@ function merge(current: Address, update: Address): Address {
 /** Whether every value in the update already matches the current address (case-insensitive; state by code or name). */
 function matches(current: Address, update: Address): boolean {
   const same = (a: string | undefined, b: string) => (a ?? '').trim().toLowerCase() === b.trim().toLowerCase();
-  const { customFields, stateOrProvince, stateOrProvinceCode, ...rest } = update;
+  // shouldSaveAddress isn't part of the address checkout compares, so it can't make a saved address differ.
+  const { customFields, stateOrProvince, stateOrProvinceCode, shouldSaveAddress: _, ...rest } = update;
   const state = stateOrProvinceCode ?? stateOrProvince;
   if (state !== undefined && !same(current.stateOrProvinceCode, state) && !same(current.stateOrProvince, state)) return false;
   if (Object.entries(rest).some(([key, value]) => value !== undefined && !same(current[key as keyof typeof rest], value))) return false;

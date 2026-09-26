@@ -44,7 +44,8 @@ src/harness/
   lifecycle.ts               one MutationObserver → mount / unmount, no duplicates, errors contained
   adapter.ts                 the ONLY file that knows BigCommerce checkout markup
   fill.ts                    fills native inputs so React/Formik see real user input
-  checkout.ts                ctx.checkout: fillShippingAddress, readShippingAddress, isSavedAddressSelected, getCheckout, onConsignmentsChange
+  checkout.ts                ctx.checkout: fillShippingAddress, readShippingAddress, isSavedAddressSelected, getCheckout, onConsignmentsChange,
+                             selectShippingOption, setBillingSameAsShipping, hideShipping
   net.ts                     read-only: the checkout SDK's API traffic, and Storefront API reads
 scripts/                     dev · smoke · deploy · build · login-url
 docs/checkout-internals.md   how stock checkout behaves at runtime, with evidence (sandbox + source)

@@ -96,11 +96,17 @@ try {
     const result = await page.evaluate((a) => window.cwh!.checkout.fillShippingAddress(a, { waitForSave: true }), ADDRESS);
     expect(result.ok, `fill incomplete: ${JSON.stringify(result)}`);
     expect(result.saved, 'no consignment save observed');
-    await page.waitForSelector('#checkout-shipping-options input[type="radio"]', { timeout: 15000 });
-    return `${await page.locator('#checkout-shipping-options input[type="radio"]').count()} shipping options`;
+    // :visible, because a widget may hide some options.
+    await page.waitForSelector('#checkout-shipping-options input[type="radio"]:visible', { timeout: 15000 });
+    return `${await page.locator('#checkout-shipping-options input[type="radio"]:visible').count()} shipping options shown`;
   });
 
   await check('leaving the step unmounts; returning remounts once', async () => {
+    // A store with "Default shipping option: None" and several options gets none selected, and Continue stays disabled.
+    // Pick the first shown option, as a shopper would.
+    await page.waitForTimeout(1000); // let checkout (or a widget) auto-select first
+    const radios = page.locator('#checkout-shipping-options input[type="radio"]:visible');
+    if (!(await radios.evaluateAll((els) => els.some((el) => (el as HTMLInputElement).checked)))) await radios.first().evaluate((el) => (el as HTMLInputElement).click());
     await page.waitForSelector('#checkout-shipping-continue:not([disabled])', { timeout: 15000 });
     await page.click('#checkout-shipping-continue');
     await page.waitForSelector('li.checkout-step--shipping:not(.checkout-step--current)', { timeout: 15000 });

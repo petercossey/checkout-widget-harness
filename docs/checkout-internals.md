@@ -41,6 +41,9 @@ Source links point at [checkout-js v1.906.1](https://github.com/bigcommerce/chec
 | Fields | `[name="shippingAddress.<field>"]` scoped to the fieldset | **best**: mirrors the SDK address model |
 | State | `stateOrProvinceCode` (select) **or** `stateOrProvince` (text), depending on country | depends on country |
 | Shipping options | `fieldset#checkout-shipping-options` | good |
+| Shipping option radios | `input[name="shippingOptionIds.<consignmentId>"]`, `value` = option id, `id="shippingOptionRadio-<consignmentId>-<optionId>"`, each inside an `<li>` ([`ShippingOptionsList.tsx:43-47`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/shippingOption/ShippingOptionsList.tsx#L43-L47), [`AccordionItem.tsx:51`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/ui/src/accordion/AccordionItem.tsx#L51)) | good |
+| Billing same as shipping | `input[name="billingSameAsShipping"]` (`id="sameAsBilling"`), **outside** the address fieldset, in the same step ([`BillingSameAsShippingField.tsx:20-27`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/BillingSameAsShippingField.tsx#L20-L27)). The payment step reuses it, so scope it to the shipping step | good |
+| Save to address book | `[name="shippingAddress.shouldSaveAddress"]` checkbox, signed-in shoppers only ([`AddressForm.tsx:253-265`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/address/AddressForm.tsx#L253-L265)) | good |
 | Continue | `#checkout-shipping-continue` (disabled while busy) | good |
 | Extension slots | `#extension-region-shipping-shippingaddressform-before/after` | only when an extension is registered |
 
@@ -71,6 +74,10 @@ el.dispatchEvent(new Event('input', { bubbles: true }));   // ✅ Formik accepts
 
   This is the same sequence a real user triggers.
 - **Ordering rule:** set the country first. Then wait for the state field to swap to a different node, and for the effect that clears state ([`SingleShippingForm.tsx:225-228`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/SingleShippingForm.tsx#L225-L228)). Then set state and phone. Blur isn't needed to save, but touched plus submitted is needed for errors to show.
+- **[source]** Checkout **puts an emptied state select back**: when `stateOrProvinceCode` is empty, the country is unchanged, and the saved address has a state code, an effect sets it to the saved one ([`SingleShippingForm.tsx:157-170`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/SingleShippingForm.tsx#L157-L170)). **[verified] 2026-09-26:** filling a same-country address whose state isn't in the list (so the select is left empty) kept the previous address's state. To change the state within a country, supply a valid one.
+- **[source]** `shouldSaveAddress` is ignored when comparing addresses ([`isEqualAddress.ts:46-55`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/address/isEqualAddress.ts#L46-L55)), so toggling the checkbox alone doesn't start an auto-save. It goes with the next address save, or on Continue ([`Shipping.tsx:169-174`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/Shipping.tsx#L169-L174)).
+- **[source]** "Billing same as shipping" does nothing until **Continue**. Then, if checked, the billing address is set to the shipping address; if unchecked, the shopper goes to the billing step ([`Shipping.tsx:176-188`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/Shipping.tsx#L176-L188), [`CheckoutPage.tsx:445-455`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/checkout/CheckoutPage.tsx#L445-L455)). The value survives step changes in `CheckoutPage` state.
+- **[verified] 2026-09-26** Clicking a shipping option radio (`el.click()`, even while hidden with `display:none`) sends `PUT …/consignments/{id}` with `{ "shippingOptionId": "…" }`, the same as a shopper's click.
 - Traps:
   - Phone with `isPhoneNumberValidationEnabled` uses intl-tel-input, which is not driven by `onChange`.
   - Date custom fields use react-datepicker.
@@ -102,7 +109,9 @@ Widgets may depend on these, and some can be detected at runtime.
   - **[source]** The server applies the setting by flagging one option `isRecommended: true`. The client then selects the recommended option, **or the only option when there's just one, even with None** ([`ShippingOptionsForm.tsx:49-71`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/shippingOption/ShippingOptionsForm.tsx#L49-L71)).
   - This runs once per consignment that has no selected option.
   - Detect at runtime: `consignments[].availableShippingOptions[].isRecommended` in the consignment response. The setting is not in `/v3/checkouts/settings`.
-  - **[verified]** The sandbox auto-selects an option, so it is not set to None.
+  - **[source]** So with **None** and two or more options quoted, nothing is selected, and Continue stays disabled until the shopper picks one ([`SingleShippingForm.tsx:277-288`](https://github.com/bigcommerce/checkout-js/blob/v1.906.1/packages/core/src/app/shipping/SingleShippingForm.tsx#L277-L288)).
+- **Shipping method types** (**[verified] 2026-09-26**): `availableShippingOptions[].type` names the built-in method, e.g. `shipping_pickupinstore` ("Pick up"), `shipping_byweight` ("Ship by weight"). Use the type, not the merchant-editable description, to recognise a method.
+- **State lists** (**[verified] 2026-09-26**): a state select's option values are ISO 3166-2 subdivision codes (e.g. `NSW`, `AUK`) with the names as labels, plus a `""` "Select a state" option. Whether state is required depends on the country.
 - **Billing same as shipping** (checked by default). This affects whether Continue also writes the billing address.
 - **Multi-address shipping** (`hasMultiShippingEnabled`, false on the sandbox). This adds the mode toggle, which swaps the whole form.
 - **Google address autocomplete** (`googleMapsApiKey`, empty on the sandbox). It changes the `address1` input (no `name`) and adds a suggestion popover.

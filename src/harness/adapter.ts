@@ -21,6 +21,12 @@ export const SELECTORS = {
   addressToggle: '#addressToggle',
   addNewAddress: '[data-test="add-new-address"]',
   shippingOptions: '#checkout-shipping-options',
+  // Radios: id="shippingOptionRadio-<consignmentId>-<optionId>", name="shippingOptionIds.<consignmentId>", value=<optionId>
+  // (ShippingOptionsList.tsx:43-47, ShippingOptionsForm.tsx:122 at v1.906.1; verified on sandbox 2026-09-26).
+  shippingOptionRadio: 'input[type="radio"][name^="shippingOptionIds."]',
+  // Outside #checkoutShippingAddress, in the same step (BillingSameAsShippingField.tsx:20-27 at v1.906.1).
+  // The payment step reuses the component, so always scope it to the shipping step.
+  billingSameAsShipping: 'input[name="billingSameAsShipping"]',
 } as const;
 
 // Storefront API paths the checkout SDK calls (XHR). Match on suffix: subfolder stores prefix them.
@@ -86,6 +92,51 @@ export function isManualShippingFormVisible(): boolean {
 /** Signed-in shoppers: the saved-address dropdown is showing a saved address, so the manual fields aren't rendered (docs/checkout-internals.md §4a). */
 export function isSavedShippingAddressSelected(): boolean {
   return !!shippingAddressRoot()?.querySelector(SELECTORS.addressToggle) && !isManualShippingFormVisible();
+}
+
+/** A shipping option's radio in the stock list, by option id. Only rendered once checkout has quotes for a valid address. */
+export function shippingOptionRadio(optionId: string): HTMLInputElement | null {
+  if (!shippingAddressRoot()) return null;
+  const radios = document.querySelectorAll<HTMLInputElement>(`${SELECTORS.shippingStepActive} ${SELECTORS.shippingOptions} ${SELECTORS.shippingOptionRadio}`);
+  return [...radios].find((radio) => radio.value === optionId) ?? null;
+}
+
+/** The "My billing address is the same as my shipping address" checkbox. Checkout only applies it when Continue is clicked. */
+export function billingSameAsShippingCheckbox(): HTMLInputElement | null {
+  if (!shippingAddressRoot()) return null;
+  return document.querySelector<HTMLInputElement>(`${SELECTORS.shippingStepActive} ${SELECTORS.billingSameAsShipping}`);
+}
+
+export interface HiddenShippingParts {
+  /** The whole address fieldset, including the saved-address dropdown. */
+  address?: boolean;
+  /** The whole shipping method list. */
+  options?: boolean;
+  /** The billing-same-as-shipping checkbox and its label. */
+  billingSameAsShipping?: boolean;
+  /** Individual shipping methods, by option id. */
+  optionIds?: string[];
+}
+
+/**
+ * Hides parts of the stock shipping step with a stylesheet, so elements checkout re-renders stay hidden.
+ * Hidden fields still work: fills and clicks through fill.ts / checkout.ts reach them. Returns a function that shows them again.
+ * Option rows use :has(). Browsers without it show the row, so callers must not rely on hiding alone.
+ */
+export function hideShippingParts(parts: HiddenShippingParts): () => void {
+  const step = 'li.checkout-step--shipping';
+  const rules: string[] = [];
+  if (parts.address) rules.push(`${step} ${SELECTORS.shippingAddress}`);
+  if (parts.options) rules.push(`${step} ${SELECTORS.shippingOptions}`);
+  if (parts.billingSameAsShipping) rules.push(`${step} ${SELECTORS.billingSameAsShipping}`, `${step} label[for="sameAsBilling"]`);
+  // Each option is an <li> (AccordionItem.tsx:51 at v1.906.1) holding its radio.
+  for (const id of parts.optionIds ?? []) rules.push(`${step} ${SELECTORS.shippingOptions} li:has(input[value="${CSS.escape(id)}"])`);
+  if (!rules.length) return () => {};
+  const style = document.createElement('style');
+  style.dataset.cwhHide = '';
+  style.textContent = `${rules.join(',')}{display:none!important}`;
+  document.head.appendChild(style);
+  return () => style.remove();
 }
 
 /** Chooses "Enter a new address" in the saved-address dropdown. This deletes the consignment and resets the form. */

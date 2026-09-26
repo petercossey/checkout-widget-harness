@@ -15,7 +15,7 @@ import { onRequest } from './net.ts';
 export { setNativeValue } from './fill.ts';
 export type { Widget, WidgetContext, WidgetStatus } from './lifecycle.ts';
 export type { Address, FillOptions, FillResult } from './fill.ts';
-export type { Checkout, Consignment, ShippingOption } from './checkout.ts';
+export type { Checkout, Consignment, HiddenShippingParts, SelectOptionResult, ShippingOption } from './checkout.ts';
 export type { Slot } from './adapter.ts';
 
 declare const __CWH_VERSION__: string;
