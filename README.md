@@ -39,6 +39,8 @@ New here? Read **[docs/first-widget.md](docs/first-widget.md)** (about 10 minute
 ```
 widgets/<name>/index.ts      your widget: registerWidget({ name, slot, mount })
 widgets/<name>/smoke.ts      drives your widget's UI in `npm run smoke`
+                             widgets/ is gitignored: see widgets/README.md
+examples/address-picker/     a complete example widget; with no widgets of your own, the scripts default to it
 src/harness/
   index.ts                   registerWidget, window.cwh (status, kill switch, debug)
   lifecycle.ts               one MutationObserver → mount / unmount, no duplicates, errors contained

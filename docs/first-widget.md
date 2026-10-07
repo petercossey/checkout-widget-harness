@@ -11,7 +11,7 @@ cp store-credentials.example.env store-credentials.env   # then fill it in: see 
 
 ## 1. Create the widget
 
-Each widget is one folder with an `index.ts`. It's built into one self-contained script, harness included.
+Each widget is one folder in `widgets/` with an `index.ts`, and the folder name matches the widget's `name`. It's built into one self-contained script, harness included. `widgets/` is gitignored, so your widgets stay out of the harness repo and pulling harness updates never touches them ([widgets/README.md](../widgets/README.md)). For a complete example, see `examples/address-picker/`.
 
 `widgets/shipping-hint/index.ts`:
 

@@ -5,23 +5,44 @@ import type { BuildOptions } from 'esbuild';
 
 export const root = new URL('../../', import.meta.url).pathname;
 
-export function listWidgets(): string[] {
-  return readdirSync(`${root}widgets`, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(`${root}widgets/${d.name}/index.ts`))
+// Your widgets live in widgets/ (gitignored); examples/ holds the tracked examples. A name can be in either, not both.
+const DIRS = ['widgets', 'examples'] as const;
+
+function widgetsIn(dir: string): string[] {
+  if (!existsSync(`${root}${dir}`)) return [];
+  return readdirSync(`${root}${dir}`, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(`${root}${dir}/${d.name}/index.ts`))
     .map((d) => d.name);
 }
 
+export function listWidgets(): string[] {
+  return DIRS.flatMap(widgetsIn);
+}
+
+// Path of the widget's folder relative to the project root, e.g. "widgets/my-widget".
+export function widgetDir(widget: string): string {
+  const dirs = DIRS.filter((dir) => widgetsIn(dir).includes(widget));
+  if (dirs.length > 1) throw new Error(`Widget "${widget}" exists in both ${dirs.join('/ and ')}/. Rename one.`);
+  if (!dirs.length) throw new Error(`Unknown widget "${widget}". Available: ${listWidgets().join(', ')}`);
+  return `${dirs[0]}/${widget}`;
+}
+
+// With no name: the only widget in widgets/, or the only example when widgets/ is empty (a fresh clone).
 export function resolveWidget(name: string | undefined): string {
-  const widgets = listWidgets();
-  if (name && widgets.includes(name)) return name;
-  if (!name && widgets.length === 1) return widgets[0];
-  throw new Error(`${name ? `Unknown widget "${name}". ` : ''}Available: ${widgets.join(', ')}`);
+  if (name) {
+    widgetDir(name); // throws if unknown or ambiguous
+    return name;
+  }
+  const own = widgetsIn('widgets');
+  const fallback = own.length ? own : widgetsIn('examples');
+  if (fallback.length === 1) return fallback[0];
+  throw new Error(`Name a widget. Available: ${listWidgets().join(', ')}`);
 }
 
 export function buildOptions(widget: string, { dev = false } = {}): BuildOptions {
   const version = `${widget}@${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}${dev ? '-dev' : ''}`;
   return {
-    entryPoints: [`${root}widgets/${widget}/index.ts`],
+    entryPoints: [`${root}${widgetDir(widget)}/index.ts`],
     bundle: true,
     format: 'iife',
     target: 'es2020',

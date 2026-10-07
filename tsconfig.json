@@ -12,5 +12,5 @@
     "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
-  "include": ["src", "widgets", "scripts"]
+  "include": ["src", "widgets", "examples", "scripts"]
 }

@@ -18,7 +18,7 @@ A harness for small widgets injected into the **stock** BigCommerce Optimized On
 | Interactive dev browser (for humans; headed, blocks) | `npm run dev -- <widget> [--login=<customerId>]` |
 | Signed-in shopper URL (30s) | `npm run -s login-url -- <customerId>` |
 
-Verify every change with `npm run typecheck && npm run smoke -- <widget>`. Give every widget a `widgets/<widget>/smoke.ts` that drives its UI (see `scripts/lib/widget-smoke.ts`); without one, smoke only tests the harness. Deploying only affects the dedicated sandbox store, but still tell the user when you do it.
+Verify every change with `npm run typecheck && npm run smoke -- <widget>`. New widgets go in `widgets/<widget>/` (gitignored; folder name = the widget's `name`). `examples/` holds the tracked examples; the scripts find widgets in either. Give every widget a `widgets/<widget>/smoke.ts` that drives its UI (see `scripts/lib/widget-smoke.ts`); without one, smoke only tests the harness. Deploying only affects the dedicated sandbox store, but still tell the user when you do it.
 
 ## Rules
 

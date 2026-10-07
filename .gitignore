@@ -6,4 +6,7 @@ dist/
 .playwright-cli/
 .dev-profile/
 reference-code/
+# Your widgets. Not committed, so updating the harness never touches them (see widgets/README.md).
+widgets/*
+!widgets/README.md
 !store-credentials.example.env

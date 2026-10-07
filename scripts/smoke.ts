@@ -4,7 +4,7 @@
 //   1. the widget mounts exactly once on the shipping step
 //   2. cwh.checkout.fillShippingAddress() makes checkout save the address and quote shipping
 //   3. leaving the step unmounts the widget, and coming back remounts it (no duplicates)
-//   4. the widget's own step, widgets/<widget>/smoke.ts, if it has one (see scripts/lib/widget-smoke.ts)
+//   4. the widget's own step, <widget folder>/smoke.ts, if it has one (see scripts/lib/widget-smoke.ts)
 //   5. ?cwh=off disables it
 //   6. the harness logs no errors
 // By default it injects the local build. With --deployed it tests what Script Manager serves.
@@ -12,7 +12,7 @@
 import { existsSync } from 'node:fs';
 import { build } from 'esbuild';
 import { chromium, type Page } from 'playwright';
-import { buildOptions, resolveWidget, root } from './lib/bundle.ts';
+import { buildOptions, resolveWidget, root, widgetDir } from './lib/bundle.ts';
 import { continueAsGuest, ensureCart, forwardConsole, injectBundle, openShippingStep } from './lib/browser.ts';
 import { storefrontUrl } from './lib/env.ts';
 import type { WidgetSmoke } from './lib/widget-smoke.ts';
@@ -25,7 +25,7 @@ const storefront = await storefrontUrl();
 
 const ADDRESS = { countryCode: 'AU', firstName: 'Smoke', lastName: 'Test', address1: '175 Pitt St', city: 'Sydney', stateOrProvinceCode: 'NSW', postalCode: '2000', phone: '0400000000' };
 const host = `[data-cwh-widget="${widget}"]`;
-const widgetSmokeFile = `widgets/${widget}/smoke.ts`;
+const widgetSmokeFile = `${widgetDir(widget)}/smoke.ts`;
 const widgetSmoke: WidgetSmoke | undefined = existsSync(`${root}${widgetSmokeFile}`) ? (await import(`${root}${widgetSmokeFile}`)).default : undefined;
 const results: { name: string; ok: boolean; skipped?: boolean; detail?: string }[] = [];
 const harnessErrors: string[] = [];

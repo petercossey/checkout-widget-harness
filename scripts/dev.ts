@@ -51,7 +51,7 @@ await page.goto(`${storefront}/checkout`);
 if (!customerId) await continueAsGuest(page).catch(() => {});
 
 console.log(`\nDev loop running for "${widget}" on ${storefront}/checkout`);
-console.log('  edit widgets/ or src/ → rebuild + reload');
+console.log('  edit the widget or src/ → rebuild + reload');
 console.log('  in DevTools: cwh.status() · add ?cwh=debug to the URL for verbose logs');
 console.log('  close the browser window to stop\n');
 

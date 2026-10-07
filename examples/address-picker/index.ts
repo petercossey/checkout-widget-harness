@@ -15,7 +15,7 @@ const PRESETS: { label: string; address: Address }[] = [
 ];
 
 registerWidget({
-  name: 'example-address-picker',
+  name: 'address-picker',
   slot: 'shipping.address.before',
 
   mount({ host, checkout, log, signal }) {

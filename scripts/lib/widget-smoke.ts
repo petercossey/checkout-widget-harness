@@ -1,4 +1,4 @@
-// A widget's own smoke step: widgets/<name>/smoke.ts, default-exporting a WidgetSmoke.
+// A widget's own smoke step: <widget folder>/smoke.ts, default-exporting a WidgetSmoke.
 // `npm run smoke` runs it after the harness checks, once the shopper has left the shipping step and
 // come back (the "billing → Edit shipping" path). It should drive the widget the way a shopper would.
 import type { Locator, Page } from 'playwright';
